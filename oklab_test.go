@@ -1,12 +1,25 @@
-package oklab
+package oklab_test
 
 import (
-	"image"
+	"fmt"
+	"github.com/alltom/oklab"
 	"image/color"
-	"image/png"
-	"os"
 	"testing"
 )
+
+func Example_convertToOklab() {
+	rgbc := color.RGBA{0xff, 0xdf, 0xe7, 0xff}
+	oklabc := oklab.OklabModel.Convert(rgbc).(oklab.Oklab)
+	fmt.Printf("L: %.2f, a: %.2f, b: %.2f\n", oklabc.L, oklabc.A, oklabc.B)
+	// Output: L: 0.93, a: 0.04, b: 0.00
+}
+
+func Example_convertOklabToRGB() {
+	oklabc := oklab.Oklab{L: 0.9322421414586456, A: 0.03673270292094283, B: 0.0006123556644819055}
+	r, g, b, _ := oklabc.RGBA()
+	fmt.Printf("R: 0x%x, G: 0x%x, B: 0x%x\n", r>>8, g>>8, b>>8)
+	// Output: R: 0xff, G: 0xdf, B: 0xe7
+}
 
 func TestOklabConversion(t *testing.T) {
 	if testing.Short() {
@@ -18,7 +31,7 @@ func TestOklabConversion(t *testing.T) {
 		for g := 0; g <= 0xff; g++ {
 			for b := 0; b <= 0xff; b++ {
 				start := color.NRGBA{uint8(r), uint8(g), uint8(b), 0xff}
-				oklab := OklabModel.Convert(start).(Oklab)
+				oklab := oklab.OklabModel.Convert(start).(oklab.Oklab)
 				final := color.NRGBAModel.Convert(oklab)
 				if start != final {
 					t.Errorf("rgb(oklab(%v)) = %v; want %v", start, final, start)
@@ -64,7 +77,7 @@ func TestOklchConversion(t *testing.T) {
 		for g := 0; g <= 0xff; g++ {
 			for b := 0; b <= 0xff; b++ {
 				start := color.NRGBA{uint8(r), uint8(g), uint8(b), 0xff}
-				oklch := OklchModel.Convert(start).(Oklch)
+				oklch := oklab.OklchModel.Convert(start).(oklab.Oklch)
 				final := color.NRGBAModel.Convert(oklch)
 				if start != final {
 					t.Errorf("rgb(oklch(%v)) = %v; want %v", start, final, start)
@@ -98,40 +111,4 @@ func TestOklchConversion(t *testing.T) {
 	t.Logf("L: %f–%f", minL, maxL)
 	t.Logf("C: %f–%f", minC, maxC)
 	t.Logf("H: %f–%f", minH, maxH)
-}
-
-func TestGradientImage(t *testing.T) {
-	f, err := os.Create("gradient.png")
-	if err != nil {
-		t.Error(err)
-	}
-	defer f.Close()
-
-	if err := png.Encode(f, Gradient{}); err != nil {
-		t.Error(err)
-	}
-}
-
-type Gradient struct{}
-
-func (g Gradient) ColorModel() color.Model {
-	return OklabModel
-}
-
-func (g Gradient) Bounds() image.Rectangle {
-	return image.Rect(0, 0, 1200, 600)
-}
-
-func (g Gradient) At(x, y int) color.Color {
-	return Oklab{0.8, lerpA(float64(x) / float64(g.Bounds().Dx())), lerpB(float64(y) / float64(g.Bounds().Dy()))}
-}
-
-func lerpA(x float64) float64 {
-	minA, maxA := -0.233888, 0.276216
-	return x*(maxA-minA) + minA
-}
-
-func lerpB(x float64) float64 {
-	minB, maxB := -0.311528, 0.198570
-	return x*(maxB-minB) + minB
 }
