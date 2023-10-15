@@ -33,7 +33,7 @@ var OklchModel = color.ModelFunc(oklchModel)
 func (c Oklab) RGBA() (uint32, uint32, uint32, uint32) {
 	r, g, b := c.SRGB()
 	r, g, b = clampf(r), clampf(g), clampf(b)
-	return uint32(0xffff * r), uint32(0xffff * g), uint32(0xffff * b), 0xffff
+	return (uint32(0x1fffe*r) + 1) >> 1, (uint32(0x1fffe*g) + 1) >> 1, (uint32(0x1fffe*b) + 1) >> 1, 0xffff
 }
 
 // Convert to linear sRGB.
